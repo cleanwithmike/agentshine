@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Shine — The AI agent that runs your cleaning business</title>
+  <meta name="description" content="Agent Shine verifies cleaning jobs from before and after photos, then pays your team instantly in USDC on Solana via x402." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="apple-touch-icon" href="assets/logo.png" />
+  <meta property="og:title" content="Agent Shine" />
+  <meta property="og:description" content="AI agent that verifies cleaning jobs and pays your team instantly on Solana." />
+  <meta property="og:image" content="assets/logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #000000;
+      --bg-alt: #070707;
+      --fg: #ffffff;
+      --muted: #8a8a8a;
+      --dim: #555;
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.18);
+      --red: #E11D48;
+      --red-dim: rgba(225, 29, 72, 0.5);
+      --red-glow: rgba(225, 29, 72, 0.25);
+      --red-hover: #be123c;
+    }
+    * { -webkit-font-smoothing: antialiased; }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .display {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      line-height: 0.95;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Animated grid background */
+    .grid-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+    .noise {
+      position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Logo invert to white */
+    .logo-img { filter: invert(1); }
+
+    /* Red glow utilities */
+    .red-glow { box-shadow: 0 0 40px var(--red-glow); }
+    .text-glow { text-shadow: 0 0 30px var(--red-glow); }
+
+    /* Buttons */
+    .btn-red {
+      position: relative;
+      background: var(--red);
+      color: #ffffff;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.3s ease;
+      box-shadow: 0 0 0 rgba(225, 29, 72, 0);
+    }
+    .btn-red:hover {
+      background: var(--red-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 0 40px var(--red-glow);
+    }
+    .btn-ghost {
+      border: 1px solid var(--line-strong);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .btn-ghost:hover { border-color: var(--red); background: rgba(225, 29, 72, 0.05); }
+
+    /* Section dividers */
+    .section-line { border-top: 1px solid var(--line); }
+
+    /* Pulse */
+    .pulse-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 10px var(--red), 0 0 20px var(--red-dim);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    /* Cards */
+    .card {
+      position: relative;
+      background: #0a0a0a;
+      border: 1px solid var(--line);
+      transition: border-color 0.3s ease, background 0.3s ease;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(225, 29, 72, 0.08), transparent 40%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    .card:hover { border-color: var(--line-strong); background: #0d0d0d; }
+    .card:hover::before { opacity: 1; }
+
+    /* Marquee */
+    .marquee { display: flex; animation: scroll 40s linear infinite; }
+    @keyframes scroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* Hero glow */
+    .hero-glow {
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 600px;
+      background: radial-gradient(ellipse at center top, rgba(225, 29, 72, 0.18), transparent 60%);
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    /* Scanline on data elements */
+    .scan-line {
+      position: relative;
+      overflow: hidden;
+    }
+    .scan-line::after {
+      content: '';
+      position: absolute; top: 0; left: -100%;
+      width: 100%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--red), transparent);
+      animation: scan 4s ease-in-out infinite;
+    }
+    @keyframes scan {
+      0%, 100% { left: -100%; opacity: 0; }
+      50% { left: 100%; opacity: 1; }
+    }
+
+    /* Shine animation for hero badge */
+    .badge {
+      background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      background-size: 200% 100%;
+      animation: shimmer 6s linear infinite;
+      border: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Headline reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: reveal 1s cubic-bezier(0.25, 0.4, 0.25, 1) forwards;
+    }
+    .reveal-1 { animation-delay: 0.1s; }
+    .reveal-2 { animation-delay: 0.3s; }
+    .reveal-3 { animation-delay: 0.5s; }
+    .reveal-4 { animation-delay: 0.7s; }
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Input */
+    input { outline: none; transition: border-color 0.2s ease, box-shadow 0.3s ease; }
+    input:focus {
+      border-color: var(--red) !important;
+      box-shadow: 0 0 30px var(--red-glow);
+    }
+
+    /* Step numbers */
+    .step-num {
+      font-family: 'Anton', sans-serif;
+      color: var(--red);
+      text-shadow: 0 0 20px var(--red-glow);
+    }
+
+    /* Orbit logo */
+    .orbit {
+      animation: spin 20s linear infinite;
+      transform-origin: center;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Live feed blink */
+    .blink { animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity: 0.4; } }
+
+    /* Subtle column glow */
+    .col-glow {
+      background: radial-gradient(ellipse at top, rgba(225, 29, 72, 0.06), transparent 50%);
+    }
+  </style>
+</head>
+<body class="relative overflow-x-hidden">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+
+  <!-- Nav -->
+  <nav class="relative z-20 w-full border-b border-[var(--line)] py-5 md:py-6 backdrop-blur-md bg-black/60">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-center relative">
+      <div class="flex flex-col items-center gap-1.5">
+        <img src="assets/logo.png" alt="Agent Shine" class="logo-img w-9 h-9" />
+        <span class="display text-[12px] tracking-[0.28em]">Agent Shine</span>
+      </div>
+      <div class="hidden md:flex absolute left-6 items-center gap-2 mono text-[11px] text-[var(--dim)]">
+        <span class="pulse-dot"></span>
+        <span class="tracking-widest uppercase">System online</span>
+      </div>
+      <a href="#waitlist" class="hidden md:flex absolute right-6 btn-red px-5 py-2.5 text-[13px] font-medium rounded-md items-center gap-2">
+        <span>Request Access</span>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative z-10">
+    <div class="hero-glow"></div>
+    <div class="relative max-w-5xl mx-auto px-6 pt-20 md:pt-28 pb-24 md:pb-32 text-center">
+
+      <div class="reveal reveal-1 badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] mono tracking-[0.2em] uppercase text-[var(--muted)] mb-10">
+        <span class="pulse-dot"></span>
+        <span>v0.1 · Solana · x402</span>
+      </div>
+
+      <h1 class="reveal reveal-2 display text-5xl md:text-7xl lg:text-[104px] leading-[0.92]">
+        The AI agent<br/>
+        that runs a cleaning<br/>
+        business <span class="text-[var(--red)] text-glow">on autopilot</span>
+      </h1>
+
+      <p class="reveal reveal-3 mt-10 text-[16px] md:text-[18px] text-[var(--muted)] max-w-2xl mx-auto leading-relaxed">
+        Agent Shine verifies every job from before and after photos, then pays your cleaners instantly in USDC on Solana. No photo reviews. No late payments. No manual work.
+      </p>
+
+      <div class="reveal reveal-4 mt-12 flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="#waitlist" class="btn-red px-8 py-4 rounded-md font-medium text-[14px] inline-flex items-center justify-center gap-2">
+          <span>Request Access</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#how" class="btn-ghost px-8 py-4 rounded-md text-[14px]">
+          How it works
+        </a>
+      </div>
+
+      <div class="reveal reveal-4 mt-14 grid grid-cols-3 gap-px max-w-2xl mx-auto border border-[var(--line)] rounded-md overflow-hidden bg-[var(--line)]">
+        <div class="bg-black py-5 px-4 scan-line">
+          <p class="mono text-[10px] tracking-[0.2em] uppercase text-[var(--dim)] mb-2">Settle</p>
+          <p class="display text-2xl">0.4s</p>
+        </div>
+        <div class="bg-black py-5 px-4 scan-line">
+          <p class="mono text-[10px] tracking-[0.2em] uppercase text-[var(--dim)] mb-2">Fee</p>
+          <p class="display text-2xl">~$0.0002</p>
+        </div>
+        <div class="bg-black py-5 px-4 scan-line">
+          <p class="mono text-[10px] tracking-[0.2em] uppercase text-[var(--dim)] mb-2">Manual Work</p>
+          <p class="display text-2xl text-[var(--red)]">0</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <section class="relative z-10 section-line py-5 overflow-hidden bg-black">
+    <div class="marquee display text-[18px] whitespace-nowrap">
+      <div class="flex items-center gap-10 pr-10">
+        <span>Sub-Second Payouts</span><span class="text-[var(--red)]">✦</span>
+        <span>USDC Settlement</span><span class="text-[var(--red)]">✦</span>
+        <span>x402 Native</span><span class="text-[var(--red)]">✦</span>
+        <span>On-Chain Receipts</span><span class="text-[var(--red)]">✦</span>
+        <span>AI Photo Verification</span><span class="text-[var(--red)]">✦</span>
+        <span>Zero Manual Work</span><span class="text-[var(--red)]">✦</span>
+        <span>Solana</span><span class="text-[var(--red)]">✦</span>
+      </div>
+      <div class="flex items-center gap-10 pr-10">
+        <span>Sub-Second Payouts</span><span class="text-[var(--red)]">✦</span>
+        <span>USDC Settlement</span><span class="text-[var(--red)]">✦</span>
+        <span>x402 Native</span><span class="text-[var(--red)]">✦</span>
+        <span>On-Chain Receipts</span><span class="text-[var(--red)]">✦</span>
+        <span>AI Photo Verification</span><span class="text-[var(--red)]">✦</span>
+        <span>Zero Manual Work</span><span class="text-[var(--red)]">✦</span>
+        <span>Solana</span><span class="text-[var(--red)]">✦</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem -->
+  <section class="relative z-10 section-line py-24 md:py-32">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+      <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// The Problem</p>
+      <h2 class="display text-3xl md:text-5xl mb-8 leading-[1]">
+        Why cleaning operators<br/>stay stuck at <span class="text-[var(--red)]">$10K/mo</span>
+      </h2>
+      <p class="text-[16px] text-[var(--muted)] max-w-2xl mx-auto leading-relaxed">
+        Every night, the same grind. Reviewing photos. Chasing cleaners. Processing payments. Dealing with client trust issues. You're scaling manually and it's eating your life.
+      </p>
+
+      <div class="mt-16 grid md:grid-cols-3 gap-px bg-[var(--line)] border border-[var(--line)] rounded-md overflow-hidden text-left">
+        <div class="card p-8 rounded-none">
+          <p class="mono text-[11px] tracking-widest text-[var(--dim)] mb-6">[ 01 ]</p>
+          <h3 class="display text-xl mb-3">Photo reviews take hours</h3>
+          <p class="text-[14px] text-[var(--muted)] leading-relaxed">Every job, every night. Zooming into bathrooms to check the grout. This does not scale.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <p class="mono text-[11px] tracking-widest text-[var(--dim)] mb-6">[ 02 ]</p>
+          <h3 class="display text-xl mb-3">Cleaners wait for payment</h3>
+          <p class="text-[14px] text-[var(--muted)] leading-relaxed">Weekly payouts kill loyalty. Your best people leave for anyone who pays faster.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <p class="mono text-[11px] tracking-widest text-[var(--dim)] mb-6">[ 03 ]</p>
+          <h3 class="display text-xl mb-3">Clients question the work</h3>
+          <p class="text-[14px] text-[var(--muted)] leading-relaxed">No verifiable proof means refunds, chargebacks, and hours on the phone defending the job.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="relative z-10 section-line py-24 md:py-32 col-glow">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-20">
+        <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// The Protocol</p>
+        <h2 class="display text-4xl md:text-6xl leading-[1]">
+          Four steps.<br/>Zero manual work.
+        </h2>
+      </div>
+
+      <div class="relative grid md:grid-cols-4 gap-px bg-[var(--line)] border border-[var(--line)] rounded-md overflow-hidden">
+        <div class="card p-8 rounded-none">
+          <p class="step-num display text-5xl mb-5">01</p>
+          <h3 class="display text-xl mb-3">Upload</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Cleaner snaps before and after photos from the job site. 30 seconds on their phone.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <p class="step-num display text-5xl mb-5">02</p>
+          <h3 class="display text-xl mb-3">Verify</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Agent scores the clean against a quality rubric. Flags missed spots automatically.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <p class="step-num display text-5xl mb-5">03</p>
+          <h3 class="display text-xl mb-3">Pay</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">On approval, USDC hits the cleaner wallet in under a second via x402 on Solana.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <p class="step-num display text-5xl mb-5">04</p>
+          <h3 class="display text-xl mb-3">Prove</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Client gets verified photos plus an on-chain receipt. No calls. No disputes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section class="relative z-10 section-line py-24 md:py-32">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// Interface</p>
+        <h2 class="display text-4xl md:text-6xl leading-[1]">
+          Run the whole operation<br/>from your phone
+        </h2>
+      </div>
+
+      <div class="card rounded-md overflow-hidden red-glow">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-[var(--line)] bg-[var(--bg-alt)]">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[var(--red)] blink"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-white/15"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-white/15"></div>
+          </div>
+          <span class="mono text-[11px] text-[var(--muted)]">agentshine.xyz/dashboard</span>
+          <span class="mono text-[11px] text-[var(--dim)] hidden md:inline">● live</span>
+        </div>
+        <div class="p-6 md:p-10 grid md:grid-cols-3 gap-8 bg-black">
+          <div class="md:col-span-1 space-y-5">
+            <div>
+              <p class="mono text-[10px] tracking-[0.2em] uppercase text-[var(--dim)] mb-2">Today</p>
+              <p class="display text-5xl">12 Jobs</p>
+            </div>
+            <div class="flex gap-6 pt-4 border-t border-[var(--line)]">
+              <div>
+                <p class="mono text-[10px] tracking-widest uppercase text-[var(--dim)] mb-1">Approved</p>
+                <p class="display text-2xl">10</p>
+              </div>
+              <div>
+                <p class="mono text-[10px] tracking-widest uppercase text-[var(--dim)] mb-1">Flagged</p>
+                <p class="display text-2xl text-[var(--red)]">2</p>
+              </div>
+            </div>
+            <div class="pt-4 border-t border-[var(--line)]">
+              <p class="mono text-[10px] tracking-widest uppercase text-[var(--dim)] mb-1">Paid Out · USDC</p>
+              <p class="display text-4xl text-[var(--red)] text-glow">$1,420</p>
+              <p class="mono text-[10px] text-[var(--dim)] mt-1">via x402 · avg 0.4s</p>
+            </div>
+            <div class="pt-4 border-t border-[var(--line)]">
+              <div class="flex items-center justify-between mb-2">
+                <p class="mono text-[10px] tracking-widest uppercase text-[var(--dim)]">Agent Status</p>
+                <span class="flex items-center gap-1.5"><span class="pulse-dot"></span><span class="mono text-[10px] text-white">ACTIVE</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <p class="mono text-[10px] tracking-[0.2em] uppercase text-[var(--dim)] mb-3">Live Feed</p>
+            <div class="flex items-center justify-between p-4 rounded-md bg-white/[0.02] border border-[var(--line)] hover:border-[var(--line-strong)] transition">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-md bg-white flex items-center justify-center text-[11px] text-black display">MR</div>
+                <div>
+                  <p class="text-[14px]">Maria R. · 4-bed deep clean</p>
+                  <p class="mono text-[11px] text-[var(--muted)]">score 96 · approved 0.4s ago</p>
+                </div>
+              </div>
+              <span class="display text-[var(--red)]">+$180</span>
+            </div>
+            <div class="flex items-center justify-between p-4 rounded-md bg-white/[0.02] border border-[var(--line)] hover:border-[var(--line-strong)] transition">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-md bg-white flex items-center justify-center text-[11px] text-black display">JT</div>
+                <div>
+                  <p class="text-[14px]">James T. · Standard turnover</p>
+                  <p class="mono text-[11px] text-[var(--muted)]">score 88 · approved 2m ago</p>
+                </div>
+              </div>
+              <span class="display text-[var(--red)]">+$95</span>
+            </div>
+            <div class="flex items-center justify-between p-4 rounded-md bg-[var(--red)]/5 border border-[var(--red)]/30">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-md bg-[var(--red)] flex items-center justify-center text-[11px] text-white display">DK</div>
+                <div>
+                  <p class="text-[14px]">Dana K. · Move-out clean</p>
+                  <p class="mono text-[11px] text-[var(--red)]">flagged · baseboards missed</p>
+                </div>
+              </div>
+              <span class="display text-[var(--muted)]">HOLD</span>
+            </div>
+            <div class="flex items-center justify-between p-4 rounded-md bg-white/[0.02] border border-[var(--line)] hover:border-[var(--line-strong)] transition">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-md bg-white flex items-center justify-center text-[11px] text-black display">AL</div>
+                <div>
+                  <p class="text-[14px]">Alex L. · Weekly recurring</p>
+                  <p class="mono text-[11px] text-[var(--muted)]">score 92 · approved 11m ago</p>
+                </div>
+              </div>
+              <span class="display text-[var(--red)]">+$75</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-center mono text-[11px] text-[var(--dim)] mt-5 tracking-widest">PREVIEW · LIVE DASHBOARD LAUNCHING SOON</p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="relative z-10 section-line py-24 md:py-32 col-glow">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// The Stack</p>
+        <h2 class="display text-4xl md:text-6xl leading-[1]">
+          Boring software<br/>for a business that prints
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-px bg-[var(--line)] border border-[var(--line)] rounded-md overflow-hidden">
+        <div class="card p-8 rounded-none">
+          <div class="display text-[var(--red)] text-3xl mb-4 text-glow">✦</div>
+          <h3 class="display text-xl mb-3">AI Photo Verification</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Every before and after gets scored. Missed spots flagged before the client notices.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <div class="display text-[var(--red)] text-3xl mb-4 text-glow">✦</div>
+          <h3 class="display text-xl mb-3">Instant USDC Payouts</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Approve a job, cleaner gets paid in under a second. Loyalty shoots up overnight.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <div class="display text-[var(--red)] text-3xl mb-4 text-glow">✦</div>
+          <h3 class="display text-xl mb-3">On-Chain Receipts</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Every job leaves a verifiable record. Clients see proof without calling you.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <div class="display text-[var(--red)] text-3xl mb-4 text-glow">✦</div>
+          <h3 class="display text-xl mb-3">Smart Scheduling</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Agent assigns cleaners by location, availability, and home size. Fewer gaps, more jobs.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <div class="display text-[var(--red)] text-3xl mb-4 text-glow">✦</div>
+          <h3 class="display text-xl mb-3">Recurring Subs On-Chain</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Weekly and monthly subs renew automatically. Cancel with one click.</p>
+        </div>
+        <div class="card p-8 rounded-none">
+          <div class="display text-[var(--red)] text-3xl mb-4 text-glow">✦</div>
+          <h3 class="display text-xl mb-3">One-Phone Operation</h3>
+          <p class="text-[13px] text-[var(--muted)] leading-relaxed">Everything from a single dashboard. Check the business between holes on the course.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Token -->
+  <section id="token" class="relative z-10 section-line py-24 md:py-32">
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-14 items-center">
+      <div>
+        <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// $SHINE</p>
+        <h2 class="display text-4xl md:text-6xl mb-6 leading-[1]">
+          Utility first.<br/>Everything else second.
+        </h2>
+        <p class="text-[15px] text-[var(--muted)] leading-relaxed mb-8">
+          $SHINE is the credit layer for the agent. Burn it to run verifications. Stake it for priority processing and lower fees. Hold it for a share of platform revenue. Nothing fancy. Just how the software gets paid.
+        </p>
+        <div class="flex flex-wrap gap-2.5 mono text-[11px] tracking-widest uppercase">
+          <span class="px-3 py-1.5 border border-[var(--line-strong)] rounded-md">SPL-2022</span>
+          <span class="px-3 py-1.5 border border-[var(--line-strong)] rounded-md">Solana</span>
+          <span class="px-3 py-1.5 border border-[var(--line-strong)] rounded-md">x402 Native</span>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div class="card p-6 rounded-md flex items-center gap-5">
+          <div class="display text-[var(--red)] text-4xl text-glow w-12">01</div>
+          <div>
+            <p class="display text-lg">Pay for verifications</p>
+            <p class="text-[13px] text-[var(--muted)]">Each AI photo check burns a small amount of $SHINE.</p>
+          </div>
+        </div>
+        <div class="card p-6 rounded-md flex items-center gap-5">
+          <div class="display text-[var(--red)] text-4xl text-glow w-12">02</div>
+          <div>
+            <p class="display text-lg">Stake for priority</p>
+            <p class="text-[13px] text-[var(--muted)]">Lower per-job fees and faster processing in busy zones.</p>
+          </div>
+        </div>
+        <div class="card p-6 rounded-md flex items-center gap-5">
+          <div class="display text-[var(--red)] text-4xl text-glow w-12">03</div>
+          <div>
+            <p class="display text-lg">Share platform revenue</p>
+            <p class="text-[13px] text-[var(--muted)]">Fees from every verified job flow back to stakers.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waitlist -->
+  <section id="waitlist" class="relative z-10 section-line py-28 md:py-40 col-glow">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// Early Access</p>
+      <h2 class="display text-5xl md:text-7xl leading-[0.95]">
+        Be first to run your<br/>team on <span class="text-[var(--red)] text-glow">autopilot</span>
+      </h2>
+      <p class="mt-8 text-[15px] text-[var(--muted)] max-w-xl mx-auto leading-relaxed">
+        Early access is limited to active cleaning business operators. Drop your email. We'll reach out.
+      </p>
+      <form id="waitlist-form" class="mt-10 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+        <input
+          type="email"
+          required
+          placeholder="you@yourcleaningbiz.com"
+          class="flex-1 bg-[var(--bg-alt)] border border-[var(--line-strong)] rounded-md px-5 py-4 text-[14px] placeholder:text-[var(--muted)]"
+        />
+        <button type="submit" class="btn-red px-6 py-4 rounded-md font-medium text-[14px] whitespace-nowrap">
+          Request Access
+        </button>
+      </form>
+      <p id="form-msg" class="mt-5 mono text-[12px] text-[var(--muted)] h-4"></p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="relative z-10 section-line">
+    <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-5">
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.png" alt="Agent Shine" class="logo-img w-6 h-6" />
+        <span class="display text-[12px] tracking-[0.22em]">Agent Shine</span>
+      </div>
+      <div class="flex items-center gap-6 mono text-[12px] text-[var(--muted)]">
+        <a href="https://x.com/agent_shine" target="_blank" rel="noopener" class="hover:text-[var(--red)] transition flex items-center gap-1.5">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          <span>agent_shine</span>
+        </a>
+        <a href="#waitlist" class="hover:text-[var(--red)] transition">Waitlist</a>
+        <a href="mailto:hello@agentshine.xyz" class="hover:text-[var(--red)] transition">Contact</a>
+      </div>
+      <p class="mono text-[11px] text-[var(--dim)]">© 2026 Agent Shine</p>
+    </div>
+  </footer>
+
+  <script>
+    // Spotlight effect on cards
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+        card.style.setProperty('--my', `${e.clientY - rect.top}px`);
+      });
+    });
+
+    // Waitlist
+    const form = document.getElementById('waitlist-form');
+    const msg = document.getElementById('form-msg');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = form.querySelector('input').value;
+      if (!email) return;
+      msg.textContent = "// ACCESS REQUESTED · WE'LL BE IN TOUCH";
+      msg.style.color = '#E11D48';
+      form.reset();
+    });
+  </script>
+</body>
+</html>
