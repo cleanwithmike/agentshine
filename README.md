@@ -2,6 +2,16 @@
 
 A minimalist landing page for **Agent Shine** — an AI agent that verifies cleaning jobs from before/after photos and pays your team instantly in USDC on Solana via x402.
 
+## Agent Wallet
+
+Solana mainnet address used by the agent for verifications, payouts and on-chain receipts:
+
+```
+DpQh8c66TvbEuBpfWLbBPi5xvPo9mKLHNxUiRgWy14vn
+```
+
+Solscan: https://solscan.io/account/DpQh8c66TvbEuBpfWLbBPi5xvPo9mKLHNxUiRgWy14vn
+
 ## Run it locally
 
 Just open `index.html` in a browser. That's it. Zero build step.

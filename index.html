@@ -590,35 +590,6 @@
     </div>
   </section>
 
-  <!-- Agent Wallet -->
-  <section id="wallet" class="relative z-10 section-line py-20 md:py-24">
-    <div class="max-w-4xl mx-auto px-6 text-center">
-      <p class="mono text-[11px] tracking-[0.3em] uppercase text-[var(--red)] mb-6">// Agent Wallet</p>
-      <h2 class="display text-3xl md:text-5xl leading-[1] mb-6">
-        One wallet. <span class="text-[var(--red)] text-glow">Fully on-chain.</span>
-      </h2>
-      <p class="text-[14px] text-[var(--muted)] max-w-xl mx-auto leading-relaxed mb-10">
-        Every verification, payout and receipt settles through the agent's Solana wallet. Watch it live.
-      </p>
-
-      <div class="card rounded-md p-5 md:p-6 flex flex-col md:flex-row items-center gap-4 md:gap-5 text-left">
-        <div class="flex items-center gap-3 md:pr-5 md:border-r border-[var(--line)] shrink-0">
-          <span class="pulse-dot"></span>
-          <span class="mono text-[11px] tracking-[0.2em] uppercase text-[var(--dim)]">Solana · Mainnet</span>
-        </div>
-        <code id="wallet-addr" class="mono text-[12px] md:text-[13px] text-white break-all flex-1 select-all">DpQh8c66TvbEuBpfWLbBPi5xvPo9mKLHNxUiRgWy14vn</code>
-        <div class="flex items-center gap-2 shrink-0">
-          <button id="copy-wallet" type="button" class="btn-ghost px-3.5 py-2 rounded-md mono text-[11px] tracking-widest uppercase">Copy</button>
-          <a href="https://solscan.io/account/DpQh8c66TvbEuBpfWLbBPi5xvPo9mKLHNxUiRgWy14vn" target="_blank" rel="noopener" class="btn-ghost px-3.5 py-2 rounded-md mono text-[11px] tracking-widest uppercase inline-flex items-center gap-1.5">
-            <span>Solscan</span>
-            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M6 4h6v6M11 5L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-        </div>
-      </div>
-      <p id="copy-msg" class="mt-4 mono text-[11px] text-[var(--dim)] h-4 tracking-widest"></p>
-    </div>
-  </section>
-
   <!-- Footer -->
   <footer class="relative z-10 section-line">
     <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-5">
@@ -631,7 +602,6 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           <span>agent_shine</span>
         </a>
-        <a href="#wallet" class="hover:text-[var(--red)] transition">Wallet</a>
         <a href="#waitlist" class="hover:text-[var(--red)] transition">Waitlist</a>
         <a href="mailto:hello@agentshine.xyz" class="hover:text-[var(--red)] transition">Contact</a>
       </div>
@@ -659,21 +629,6 @@
       msg.textContent = "// ACCESS REQUESTED · WE'LL BE IN TOUCH";
       msg.style.color = '#E11D48';
       form.reset();
-    });
-
-    // Wallet copy
-    const walletBtn = document.getElementById('copy-wallet');
-    const walletAddr = document.getElementById('wallet-addr');
-    const copyMsg = document.getElementById('copy-msg');
-    walletBtn?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(walletAddr.textContent.trim());
-        copyMsg.textContent = '// WALLET COPIED';
-        copyMsg.style.color = '#E11D48';
-        setTimeout(() => { copyMsg.textContent = ''; }, 2200);
-      } catch (_) {
-        copyMsg.textContent = '// COPY FAILED · SELECT MANUALLY';
-      }
     });
   </script>
 </body>
